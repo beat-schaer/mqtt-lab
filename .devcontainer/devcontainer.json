@@ -1,0 +1,21 @@
+{
+  "name": "mqtt-lab",
+  "image": "bschaer71/mqtt-lab:1.0",
+  "workspaceFolder": "/workspace/mqtt-lab",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/mqtt-lab,type=bind",
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/ubuntu/.ssh,type=bind,consistency=cached"
+  ],
+  "remoteUser": "ubuntu",
+  "customizations": { 
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpp-devtools",
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools-themes",
+        "xaver.clang-format"
+      ]
+    }
+  }
+}
