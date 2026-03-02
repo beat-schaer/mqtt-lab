@@ -6,6 +6,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     client.cpp
     input_prompt.h
     main.cpp
-    reader.h
-    reader.cpp
+    reader_base.h
+    reader_base.cpp
+    publish_reader.h
+    publish_reader.cpp
 )
