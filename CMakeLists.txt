@@ -9,4 +9,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(chat-work)
+add_subdirectory(rng-client-work)
 # add_subdirectory(solutions)
