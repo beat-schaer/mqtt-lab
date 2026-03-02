@@ -1,6 +1,6 @@
 {
   "name": "mqtt-lab",
-  "image": "bschaer71/mqtt-lab:1.0",
+  "image": "bschaer71/mqtt-lab:2.0",
   "workspaceFolder": "/workspace/mqtt-lab",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/mqtt-lab,type=bind",
   "mounts": [
