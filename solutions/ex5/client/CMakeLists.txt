@@ -1,4 +1,4 @@
-project(client-ex5)
+project(ex5-client)
 
 find_package(Boost REQUIRED COMPONENTS json)
 

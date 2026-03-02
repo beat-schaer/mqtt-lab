@@ -1,4 +1,4 @@
-project(chat-ex3)
+project(ex3)
 
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE

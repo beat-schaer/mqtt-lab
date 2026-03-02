@@ -1,4 +1,4 @@
-project(chat-ex1)
+project(ex4)
 
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE
@@ -10,4 +10,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     reader_base.cpp
     publish_reader.h
     publish_reader.cpp
+    subscribe_reader.h
+    subscribe_reader.cpp
 )
