@@ -22,6 +22,7 @@ Client::Client(const ClientType::executor_type &executor, const InputPrompt &pro
 void Client::run()
 {
   m_mqtt_client.async_run(std::bind(&Client::on_connect, this, _1));
+  setup_receive();
 }
 
 void Client::disconnect()
@@ -30,31 +31,28 @@ void Client::disconnect()
                                  std::bind(&Client::on_disconnect, this, _1));
 }
 
-void Client::publish_chat(std::string_view topic_leaf, std::string_view content, boost::mqtt5::retain_e retained,
-                          boost::mqtt5::qos_e qos, std::function<void()> finished_cb)
+void Client::publish_chat(std::string_view topic_leaf, std::string content, boost::mqtt5::retain_e retained,
+                          boost::mqtt5::qos_e qos)
 {
-  auto topic = std::format("{}/chat/{}", m_peer_name, topic_leaf);
+  auto topic = std::format("{}/chat/{}", m_my_name, topic_leaf);
   switch (qos) {
   case qos_e::at_most_once:
-    m_mqtt_client.async_publish<qos_e::at_most_once>(std::move(topic), std::string{content}, retained, {},
-                                                     std::bind(&Client::on_puback_0, this, _1, std::move(finished_cb)));
+    m_mqtt_client.async_publish<qos_e::at_most_once>(std::move(topic), std::move(content), retained, {},
+                                                     std::bind(&Client::on_puback_0, this, _1));
     break;
 
   case qos_e::at_least_once:
-    m_mqtt_client.async_publish<qos_e::at_least_once>(
-        std::move(topic), std::string{content}, retained, {},
-        std::bind(&Client::on_puback_12, this, _1, _2, std::move(finished_cb)));
+    m_mqtt_client.async_publish<qos_e::at_least_once>(std::move(topic), std::move(content), retained, {},
+                                                      std::bind(&Client::on_puback_12, this, _1, _2));
     break;
 
   case qos_e::exactly_once:
-    m_mqtt_client.async_publish<qos_e::exactly_once>(
-        std::move(topic), std::string{content}, retained, {},
-        std::bind(&Client::on_puback_12, this, _1, _2, std::move(finished_cb)));
+    m_mqtt_client.async_publish<qos_e::exactly_once>(std::move(topic), std::move(content), retained, {},
+                                                     std::bind(&Client::on_puback_12, this, _1, _2));
     break;
 
   default:
     std::cout << "Invalid QoS: " << static_cast<int>(qos) << std::endl;
-    finished_cb();
   }
 }
 
@@ -62,7 +60,7 @@ void Client::subscribe_myself(boost::mqtt5::qos_e max_qos, boost::mqtt5::no_loca
                               boost::mqtt5::retain_as_published_e retain_as_published)
 {
   subscribe_topic topic;
-  topic.topic_filter = std::format("{}/#", m_my_name);
+  topic.topic_filter = std::format("{}/#", m_peer_name);
   topic.sub_opts.max_qos = max_qos;
   topic.sub_opts.no_local = no_local;
   topic.sub_opts.retain_as_published = retain_as_published;
@@ -94,23 +92,19 @@ void Client::on_suback(boost::mqtt5::error_code err, const std::vector<boost::mq
   std::cout << "\nSubscribe acknowledged! result=" << err.message()
             << " reason_code=" << (reason_codes.size() == 1 ? reason_codes[0].message() : std::string{}) << std::endl;
   m_prompt.redisplay();
-  setup_receive();
 }
 
-void Client::on_puback_0(boost::mqtt5::error_code err, std::function<void()> finished_cb)
+void Client::on_puback_0(boost::mqtt5::error_code err)
 {
   std::cout << "\nPublish acknowledged! result=" << err.message() << std::endl;
   m_prompt.redisplay();
-  finished_cb();
 }
 
-void Client::on_puback_12(boost::mqtt5::error_code err, boost::mqtt5::reason_code reason_code,
-                          std::function<void()> finished_cb)
+void Client::on_puback_12(boost::mqtt5::error_code err, boost::mqtt5::reason_code reason_code)
 {
   std::cout << "\nPublish acknowledged! result=" << err.message() << "  reason_code=" << reason_code.message()
             << std::endl;
   m_prompt.redisplay();
-  finished_cb();
 }
 
 void Client::on_receive(boost::mqtt5::error_code err, const std::string &topic, const std::string &content,

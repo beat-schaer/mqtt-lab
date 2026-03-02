@@ -19,8 +19,7 @@ void PublishReader::run()
 
 void PublishReader::setup_topic_leaf()
 {
-  setup<PublishReader>("Enter topic leaf (empty to end client)", &PublishReader::setup_topic_leaf,
-                       &PublishReader::handle_topic_leaf);
+  setup("Enter topic leaf (empty to end client)", &PublishReader::setup_topic_leaf, &PublishReader::handle_topic_leaf);
 }
 
 void PublishReader::setup_content()
@@ -86,5 +85,7 @@ void PublishReader::handle_qos(std::string input)
   }
 
   m_prompt.clear();
-  m_client.publish_chat(m_topic_leaf, m_content, m_retain, m_qos, std::bind(&PublishReader::run, this));
+  m_client.publish_chat(m_topic_leaf, m_content, m_retain, m_qos);
+
+  setup_topic_leaf();
 }

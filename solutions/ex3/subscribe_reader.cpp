@@ -18,19 +18,18 @@ void SubscribeReader::run()
 
 void SubscribeReader::setup_max_qos()
 {
-  setup<SubscribeReader>("Max QoS (0..2)", &SubscribeReader::setup_max_qos, &SubscribeReader::handle_max_qos);
+  setup("Max QoS (0..2)", &SubscribeReader::setup_max_qos, &SubscribeReader::handle_max_qos);
 }
 
 void SubscribeReader::setup_no_local()
 {
-  setup<SubscribeReader>("No local ? (1=yes, 0=no)", &SubscribeReader::setup_no_local,
-                         &SubscribeReader::handle_no_local);
+  setup("No local ? (1=yes, 0=no)", &SubscribeReader::setup_no_local, &SubscribeReader::handle_no_local);
 }
 
 void SubscribeReader::setup_retain_as_published()
 {
-  setup<SubscribeReader>("Retain as published ? (1=yes, 0=no)", &SubscribeReader::setup_retain_as_published,
-                         &SubscribeReader::handle_retain_as_published);
+  setup("Retain as published ? (1=yes, 0=no)", &SubscribeReader::setup_retain_as_published,
+        &SubscribeReader::handle_retain_as_published);
 }
 
 void SubscribeReader::handle_max_qos(std::string input)
