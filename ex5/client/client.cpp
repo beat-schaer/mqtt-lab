@@ -1,0 +1,102 @@
+#include "client.h"
+
+#include "input_prompt.h"
+
+#include <boost/uuid.hpp>
+#include <format>
+#include <functional>
+#include <iostream>
+
+using namespace boost::mqtt5;
+using namespace std::placeholders;
+
+Client::Client(const ClientType::executor_type &executor, const InputPrompt &prompt)
+    : m_mqtt_client{executor}
+    , m_prompt{prompt}
+    , m_response_topic{create_response_topic()}
+{
+  m_mqtt_client.brokers("broker.mqtt", 1883);
+}
+
+void Client::run()
+{
+  m_mqtt_client.async_run(std::bind(&Client::on_connect, this, _1));
+  setup_receive();
+  subscribe_myself();
+}
+
+void Client::disconnect()
+{
+  m_mqtt_client.async_disconnect(disconnect_rc_e::disconnect_with_will_message, {},
+                                 std::bind(&Client::on_disconnect, this, _1));
+}
+
+void Client::publish_rng_request(std::string content)
+{
+  publish_props props;
+  props[prop::response_topic] = m_response_topic;
+  m_mqtt_client.async_publish<qos_e::at_least_once>("rng/generate", std::move(content), retain_e::no, props,
+                                                    std::bind(&Client::on_puback_12, this, _1, _2));
+}
+
+void Client::subscribe_myself()
+{
+  subscribe_topic topic;
+  topic.topic_filter = m_response_topic;
+  m_mqtt_client.async_subscribe(topic, {}, std::bind(&Client::on_suback, this, _1, _2, _3));
+}
+
+void Client::setup_receive()
+{
+  m_mqtt_client.async_receive(std::bind(&Client::on_receive, this, _1, _2, _3, _4));
+}
+
+void Client::on_connect(boost::mqtt5::error_code err)
+{
+  if (!err || err == boost::asio::error::operation_aborted) {
+    return;
+  }
+  std::cout << "\nConnection failed! error=" << err.message() << std::endl;
+}
+
+void Client::on_disconnect(boost::mqtt5::error_code err)
+{
+  std::cout << "\nDisconnected! result=" << err.message() << std::endl;
+}
+
+void Client::on_suback(boost::mqtt5::error_code err, const std::vector<boost::mqtt5::reason_code> &reason_codes,
+                       const boost::mqtt5::suback_props &suback_props)
+{
+  std::cout << "\nSubscribe acknowledged! result=" << err.message()
+            << " reason_code=" << (reason_codes.size() == 1 ? reason_codes[0].message() : std::string{}) << std::endl;
+  m_prompt.redisplay();
+}
+
+void Client::on_puback_12(boost::mqtt5::error_code err, boost::mqtt5::reason_code reason_code)
+{
+  std::cout << "\nPublish acknowledged! result=" << err.message() << "  reason_code=" << reason_code.message()
+            << std::endl;
+  m_prompt.redisplay();
+}
+
+void Client::on_receive(boost::mqtt5::error_code err, const std::string &, const std::string &content,
+                        const boost::mqtt5::publish_props &)
+{
+  if (err) {
+    if (err != boost::asio::error::operation_aborted) {
+      std::cout << "\nReceive failed! error=" << err.message() << std::endl;
+      m_prompt.redisplay();
+    }
+    return;
+  }
+  std::cout << "\n*** Response received content=" << content << " ***" << std::endl;
+  m_prompt.redisplay();
+  setup_receive();
+}
+
+std::string Client::create_response_topic()
+{
+  boost::uuids::random_generator generator;
+  const auto uuid = generator();
+  return std::format("responses/{}", boost::uuids::to_string(uuid));
+}
